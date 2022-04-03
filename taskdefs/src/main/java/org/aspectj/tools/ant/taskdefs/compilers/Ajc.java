@@ -81,7 +81,7 @@ public class Ajc extends DefaultCompilerAdapter {
         PrintStream err = System.err;
         PrintStream out = System.out;
         try {
-            Class main = Class.forName(MAIN_CLASS_NAME);
+            Class<?> main = Class.forName(MAIN_CLASS_NAME);
             if (main == null) {
                 throw new ClassNotFoundException(MAIN_CLASS_NAME);
             }
@@ -122,7 +122,7 @@ public class Ajc extends DefaultCompilerAdapter {
     private String[] removeUnsupported(Commandline cline, PrintStream log) {
         if (null == log) log = System.err;
         String[] args = cline.getCommandline();
-        List argsList = new ArrayList();
+        List<String> argsList = new ArrayList<>();
         for (int i = 0; i < args.length; i++) {
             String arg = args[i];
             if (javacOnlyFlags.contains(arg)) {
@@ -190,7 +190,7 @@ public class Ajc extends DefaultCompilerAdapter {
 
         // Same behavior as DefaultCompilerAdapter.logAndAddFilesToCompile
         attributes.log("Compilation args: " + cmd.toString(), Project.MSG_VERBOSE);
-        StringBuffer niceSourceList = new StringBuffer("File");
+        StringBuilder niceSourceList = new StringBuilder("File");
         if (compileList.length != 1) {
             niceSourceList.append("s");
         }

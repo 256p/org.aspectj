@@ -27,7 +27,7 @@ To publish a snapshot, set up your credentials in `~/.m2/settings.xml` something
 </settings>
 ```
 
-Assuming that you are currently working on version 1.9.7-SNAPSHOT, you simply call:
+Assuming that you are currently working on version 1.9.8-SNAPSHOT, you simply call:
 
 ```shell
 mvn clean deploy 
@@ -86,14 +86,10 @@ java -version
 git status
 
 # Set release version in all POMs
-mvn versions:set -DnewVersion=1.9.7.M2
+mvn versions:set -DnewVersion=1.9.8.M2
 
 # Verify if the POM changes are OK, then remove the POM backup files
 mvn versions:commit
-
-# Set some environment variables needed by Nexus Staging Maven plugin on JDK 16,
-# until https://issues.sonatype.org/browse/OSSRH-66257 is resolved
-export MAVEN_OPTS="--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.text=ALL-UNNAMED --add-opens=java.desktop/java.awt.font=ALL-UNNAMED"
 
 # Build and deploy the release to a Nexus staging repository.
 # The 'release' profile will activate:
@@ -122,25 +118,25 @@ Before we release the staging repository though, we want to commit and tag the r
 ```shell
 # Commit the release POMs to Git (better do this from your IDE, verifying the
 # changes before staging them for Git commit)
-git commit -am "Set version to 1.9.7.M2"
+git commit -am "Set version to 1.9.8.M2"
 
 # Tag release
-git tag V1_9_7_M2
+git tag V1_9_8_M2
 
 # Set new snapshot version, increasing the version number after a final release
-mvn versions:set -DnewVersion=1.9.7-SNAPSHOT
+mvn versions:set -DnewVersion=1.9.8-SNAPSHOT
 
 # Verify if the POM changes are OK, then remove the POM backup files
 mvn versions:commit
 
 # Commit the snapshot POMs to Git
-git commit -am "Set version to 1.9.7-SNAPSHOT"
+git commit -am "Set version to 1.9.8-SNAPSHOT"
 
 # Push the previous commits to GitHub
 git push origin
 
 # Push the release tag to GitHub
-git push origin V1_9_7_M2
+git push origin V1_9_8_M2
 ```
 
 OK, the Git house-keeping is done. Now finally, let us enjoy the fruits of our work and release the staging repository
@@ -160,7 +156,7 @@ to Maven Central:
 # repositories there are.
 mvn nexus-staging:rc-list
 # [INFO] ID                   State    Description
-# [INFO] orgaspectj-1106      CLOSED   org.aspectj:aspectjrt:1.9.7.M2
+# [INFO] orgaspectj-1106      CLOSED   org.aspectj:aspectjrt:1.9.8.M2
 
 # Use the ID of the corresponding CLOSED staging repository for releasing to
 # Maven Central
@@ -168,8 +164,8 @@ mvn nexus-staging:rc-release -DstagingRepositoryId=orgaspectj-1106
 ```
 
 Tadaa! We have performed an AspectJ release. In a few minutes, the artifacts should appear on Maven Central somewhere
-under https://repo1.maven.org/maven2/org/aspectj/, e.g. AspectJ Tools 1.9.7.M2 would appear under
-https://repo1.maven.org/maven2/org/aspectj/aspectjtools/1.9.7.M2/. As soon as you see the artifacts there instead of
+under https://repo1.maven.org/maven2/org/aspectj/, e.g. AspectJ Tools 1.9.8.M2 would appear under
+https://repo1.maven.org/maven2/org/aspectj/aspectjtools/1.9.8.M2/. As soon as you see the artifacts there instead of
 "404 not found", you can announce release availability on the AspectJ mailing list and wherever else appropriate.
 
 Finally, you probably want to publish the AspectJ installer (`installer/target/aspectj-[VERSION].jar`), e.g. by creating a

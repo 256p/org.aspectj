@@ -36,6 +36,7 @@ public class RunSpec implements ITestStep {
 	private String options;
 	private String cpath;
 	private String mpath;
+	private String orderedStdout;
 	private String orderedStderr;
 	private AjcTest myTest;
 	private OutputSpec stdErrSpec;
@@ -70,6 +71,10 @@ public class RunSpec implements ITestStep {
 			// On Java 16+, LTW no longer works without this parameter. Add the argument here and not in AjcTestCase::run,
 			// because even if 'useLTW' and 'useFullLTW' are not set, we might in the future have tests for weaver attachment
 			// during runtime. See also docs/dist/doc/README-187.html.
+			//
+			// The reason for setting this parameter for Java 9+ instead of 16+ is that it helps to avoid the JVM printing
+			// unwanted illegal access warnings during weaving in 'useFullLTW' mode, either making existing tests fail or
+			// having to assert on the warning messages.
 			vmargs += is16VMOrGreater() ? " --add-opens java.base/java.lang=ALL-UNNAMED" : "";
 
 			AjcTestCase.RunResult rr = inTestCase.run(getClassToRun(), getModuleToRun(), args, vmargs, getClasspath(), getModulepath(), useLtw, "true".equalsIgnoreCase(usefullltw));
@@ -78,7 +83,7 @@ public class RunSpec implements ITestStep {
 				stdErrSpec.matchAgainst(rr.getStdErr(), orderedStderr);
 			}
 			if (stdOutSpec != null) {
-				stdOutSpec.matchAgainst(rr.getStdOut());
+				stdOutSpec.matchAgainst(rr.getStdOut(), orderedStdout);
 			}
 		} finally {
 			restoreProperties();
@@ -169,6 +174,10 @@ public class RunSpec implements ITestStep {
 
 	public void setOrderedStderr(String orderedStderr) {
 		this.orderedStderr = orderedStderr;
+	}
+
+	public void setOrderedStdout(String orderedStdout) {
+		this.orderedStdout = orderedStdout;
 	}
 
 	public String getClassToRun() {

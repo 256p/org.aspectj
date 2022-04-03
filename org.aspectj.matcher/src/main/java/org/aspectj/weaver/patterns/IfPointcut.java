@@ -85,11 +85,13 @@ public class IfPointcut extends Pointcut {
 
 	@Override
 	protected FuzzyBoolean matchInternal(Shadow shadow) {
-		if ((extraParameterFlags & Advice.ConstantReference) != 0) {
-			if ((extraParameterFlags & Advice.ConstantValue) != 0) {
-				return FuzzyBoolean.YES;
-			} else {
-				return FuzzyBoolean.NO;
+		if (extraParameterFlags != -1) { // make sure it isn't annotation style if relying on these values
+			if ((extraParameterFlags & Advice.ConstantReference) != 0) {
+				if ((extraParameterFlags & Advice.ConstantValue) != 0) {
+					return FuzzyBoolean.YES;
+				} else {
+					return FuzzyBoolean.NO;   
+				}
 			}
 		}
 		// ??? this is not maximally efficient
@@ -271,9 +273,33 @@ public class IfPointcut extends Pointcut {
 					} else if (AjcMemberMaker.TYPEX_ENCLOSINGSTATICJOINPOINT.getSignature().equals(argSignature)) {
 						args.add(shadow.getThisEnclosingJoinPointStaticPartVar());
 					} else {
-						if (state.size() == 0 || currentStateIndex > state.size()) {
+
+						if (state.size() == 0 || currentStateIndex > state.size()) { // if 'we have nothing else to bind from in the state object' 
 							String[] paramNames = testMethod.getParameterNames();
-							StringBuffer errorParameter = new StringBuffer();
+							StringBuilder errorParameter = new StringBuilder();
+							
+							// Support a single special situation: where the if() pointcut takes a parameter bound elsewhere
+							// in the pointcut but the advice does not bind it. For example:
+							//
+							// @Pointcut("this(o) && if()") public static boolean method(Foo f) { return f.isTrue();}
+							// @Before("method(*)") public void beforeAdvice() {}
+
+							// The condition above is effectively saying 'if we have nothing to bind'
+							if ( (i+1) == testMethod.getParameterTypes().length) { // If there is just one more to bind
+								// As with code style, recurse just to get the variable binding information
+								ExposedState myState = new ExposedState(baseArgsCount);
+								myState.setConcreteAspect(state.getConcreteAspect());
+								residueSource.findResidue(shadow, myState);
+								if (myState.size()==1) {
+									// Treat that as the parameter value the if pointcut needs
+									Var v = myState.get(0);
+									args.add(v);
+									ret = Test.makeAnd(ret,
+											Test.makeInstanceof(v, testMethod.getParameterTypes()[i].resolve(shadow.getIWorld())));
+									continue;
+								}
+							}
+							
 							if (paramNames != null) {
 								errorParameter.append(testMethod.getParameterTypes()[i].getName()).append(" ");
 								errorParameter.append(paramNames[i]);
@@ -308,7 +334,7 @@ public class IfPointcut extends Pointcut {
 				}
 			}
 
-			ret = Test.makeAnd(ret, Test.makeCall(testMethod, (Expr[]) args.toArray(new Expr[0])));
+			ret = Test.makeAnd(ret, Test.makeCall(testMethod, (Expr[]) args.toArray(Expr.NONE)));
 
 			// Remember...
 			ifLastMatchedShadowId = shadow.shadowId;
@@ -354,7 +380,7 @@ public class IfPointcut extends Pointcut {
 			ResolvedPointcutDefinition def = bindings.peekEnclosingDefinition();
 			if (def != null) {
 				ResolvedType aspect = inAspect.getWorld().resolve(def.getDeclaringType());
-				for (Iterator memberIter = aspect.getMethods(true, true); memberIter.hasNext();) {
+				for (Iterator<ResolvedMember> memberIter = aspect.getMethods(true, true); memberIter.hasNext();) {
 					ResolvedMember method = (ResolvedMember) memberIter.next();
 					if (def.getName().equals(method.getName())
 							&& def.getParameterTypes().length == method.getParameterTypes().length) {

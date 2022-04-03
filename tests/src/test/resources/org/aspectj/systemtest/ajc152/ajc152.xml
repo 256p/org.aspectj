@@ -448,7 +448,7 @@
       </run>
     </ajc-test>
 
-    <ajc-test dir="bugs152/pr125480" title="aop.xml aspect inheriting abstract method ">
+    <ajc-test dir="bugs152/pr125480" title="aop.xml aspect inheriting abstract method">
         <compile files="HelloWorld.java"/>
         <compile files="AbstractMethods.aj, ConcreteMethods.aj" options="-1.5"/>
         <run class="HelloWorld" ltw="aop-tracing.xml">

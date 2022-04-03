@@ -58,7 +58,7 @@ public class BuildModuleTest extends TestCase {
     private static final String[] SKIPS
         //= {};
        = {"aspectjtools", "ajdoc", "aspectj5rt", "run-all-junit-tests",
-        "ajbrowser", "testing", "testing-drivers", "org.aspectj.ajdt.core", "weaver"};
+        "testing", "testing-drivers", "org.aspectj.ajdt.core", "weaver"};
 
     private static final String SKIP_MESSAGE =
         "BuildModuleTest: Define \"run.build.tests\" as a system "
@@ -107,7 +107,7 @@ public class BuildModuleTest extends TestCase {
 			if (!Util.delete(file)) {
 				File[] list = file.listFiles();
 				if (!Util.isEmpty(list)) {
-					StringBuffer sb = new StringBuffer();
+					StringBuilder sb = new StringBuilder();
 					sb.append("warning: BuildModuleTest unable to delete ");
 					sb.append(file.toString());
 					sb.append("\n"); // XXX platform
@@ -183,11 +183,6 @@ public class BuildModuleTest extends TestCase {
         if (null != dupError) {
             fail(dupError);
         }
-    }
-    public void testAjbrowser() {
-        checkBuild("ajbrowser",
-            "org.aspectj.tools.ajbrowser.Main",
-            new String[] {"-noExit", "-version"}); // compiler version
     }
     public void testTestingUtils() {
         checkBuild("testing-util");

@@ -11,8 +11,8 @@ the AspectJ Compiler _ajc_ from the command line.
 
 Please refer to the [AspectJ Development Environment Guide](https://www.eclipse.org/aspectj/doc/next/devguide/printable.html)
 for more details about on-board AspectJ tools, such as _ajc_ (compiler), _ajdoc_ (aspect-enriched Javadoc), _aj_
-(load-time weaving helper), AspectJ Browser (simple visualisation tool for cross-cutting aspect structure) as well as
-basic information about load-time weaving configuration and the built-in Ant task for AspectJ.
+(load-time weaving helper) as well as basic information about load-time weaving configuration and the built-in Ant task
+for AspectJ.
 
 ## IDE support
 
@@ -32,8 +32,10 @@ projects using AspectJ Maven Plugin.
 #### AspectJ Development Tools (AJDT)
 
 Use an update sites corresponding to your Eclipse version (minimal version listed):
-* Eclipse 2021-03 (4.19): https://aspectj.dev/eclipse/ajdt/419
-* Eclipse 2018-12 (4.10): https://download.eclipse.org/tools/ajdt/410/dev/update
+* Eclipse 2022-03 (4.23), AspectJ 1.9.9, Java 18: https://download.eclipse.org/tools/ajdt/423/dev/update
+* Eclipse 2021-09 (4.21), AspectJ 1.9.8, Java 17: https://download.eclipse.org/tools/ajdt/421/dev/update
+* Eclipse 2021-03 (4.19), AspectJ 1.9.7, Java 16: https://download.eclipse.org/tools/ajdt/419/dev/update
+* Eclipse 2018-12 (4.10), AspectJ 1.9.6, Java 14: https://download.eclipse.org/tools/ajdt/410/dev/update
 * For older versions, please refer to https://www.eclipse.org/ajdt/downloads (page was not updated in a long time,
   and I have no write access).
 
@@ -86,6 +88,19 @@ milestone is [6.1.0-m3](https://docs.freefair.io/gradle-plugins/6.1.0-m3/referen
 As mentioned in the introduction, AspectJ features its own Ant task, which is described in
 [this chapter](https://www.eclipse.org/aspectj/doc/next/devguide/printable.html#antTasks) of the Development Environment
 Guide.
+
+### Command line
+
+If you wish to install AspectJ in a separate directory and use it from the command line without any extra build tools,
+feel free to download the **AspectJ installer**. It is and executable JAR installer. It requires Java and possibly admin
+rights, if e.g. under Windows you want to install AspectJ to _C:/Program Files/AspectJ_. You execute it from a command
+prompt via `java -jar installer-<version>.jar` and select your installation options. Then you add `<ASPECTJ_HOME>/bin`
+to your path and are good to go. You can now call tools like the Aspectj compiler `ajc` or the AspectJ documentation
+generator `ajdoc` (similar to Javadoc) from the command line.
+
+You can find older installer versions until 1.9.6 on the [AspectJ website](https://www.eclipse.org/aspectj/downloads.php),
+more recent ones are attached to AspectJ [GitHub releases](https://github.com/eclipse/org.aspectj/releases) as
+_aspectj-*jar_.
 
 ## Biased recommendation
 

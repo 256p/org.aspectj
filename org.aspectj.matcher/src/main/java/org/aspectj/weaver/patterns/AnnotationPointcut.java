@@ -139,9 +139,8 @@ public class AnnotationPointcut extends NameBindingPointcut {
 			if (rMember.isAnnotatedElsewhere()) {
 				if (kind == Shadow.FieldGet || kind == Shadow.FieldSet) {
 					// FIXME asc should include supers with getInterTypeMungersIncludingSupers ?
-					List mungers = rMember.getDeclaringType().resolve(shadow.getIWorld()).getInterTypeMungers();
-					for (Object munger : mungers) {
-						ConcreteTypeMunger typeMunger = (ConcreteTypeMunger) munger;
+					List<ConcreteTypeMunger> mungers = rMember.getDeclaringType().resolve(shadow.getIWorld()).getInterTypeMungers();
+					for (ConcreteTypeMunger typeMunger : mungers) {
 						if (typeMunger.getMunger() instanceof NewFieldTypeMunger) {
 							ResolvedMember fakerm = typeMunger.getSignature();
 							if (fakerm.equals(member)) {
@@ -316,7 +315,7 @@ public class AnnotationPointcut extends NameBindingPointcut {
 	}
 
 	public void buildDeclarationText() {
-		StringBuffer buf = new StringBuffer();
+		StringBuilder buf = new StringBuilder();
 		buf.append("@annotation(");
 		String annPatt = annotationTypePattern.toString();
 		buf.append(annPatt.startsWith("@") ? annPatt.substring(1) : annPatt);

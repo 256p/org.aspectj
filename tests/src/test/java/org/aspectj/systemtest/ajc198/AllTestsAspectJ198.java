@@ -18,16 +18,23 @@ public class AllTestsAspectJ198 {
 
 	public static Test suite() {
 		TestSuite suite = new TestSuite("AspectJ 1.9.8 tests");
+    suite.addTest(Bugs198Tests.suite());
 		if (LangUtil.is9VMOrGreater()) {
-			suite.addTest(org.aspectj.systemtest.ajc198.CompileWithReleaseTests.suite());
+			suite.addTest(CompileWithReleaseTests.suite());
+		}
+		if (LangUtil.is11VMOrGreater()) {
+			suite.addTest(Bugs198Java11Tests.suite());
 		}
 		if (LangUtil.is17VMOrGreater()) {
 			suite.addTest(SanityTestsJava17.suite());
 			suite.addTest(Ajc198TestsJava.suite());
 		}
+		// Do not run tests using a previous compiler's preview features anymore. They would all fail.
+		/*
 		if (LangUtil.is17VMOrGreater() && !LangUtil.is18VMOrGreater()) {
 			suite.addTest(Java17PreviewFeaturesTests.suite());
 		}
+		*/
 		return suite;
 	}
 }

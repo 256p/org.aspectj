@@ -19,7 +19,7 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 
 public class ThreadCounterImpl11 implements ThreadCounter {
-	private Hashtable counters = new Hashtable();
+	private Hashtable<Thread, Counter> counters = new Hashtable<>();
 	private Thread cached_thread;
 	private Counter cached_counter;
 
@@ -43,13 +43,12 @@ public class ThreadCounterImpl11 implements ThreadCounter {
 			// Collect more often if there are many threads, but not *too* often
 			int size = Math.max(1, counters.size()); // should be >1 b/c always live threads, but...
 			if (change_count > Math.max(MIN_COLLECT_AT, COLLECT_AT/size)) {
-				List dead_stacks = new ArrayList();
-				for (Enumeration e = counters.keys(); e.hasMoreElements(); ) {
+				List<Thread> dead_stacks = new ArrayList<>();
+				for (Enumeration<Thread> e = counters.keys(); e.hasMoreElements(); ) {
 					Thread t = (Thread)e.nextElement();
 					if (!t.isAlive()) dead_stacks.add(t);
 				}
-				for (Object dead_stack : dead_stacks) {
-					Thread t = (Thread) dead_stack;
+				for (Thread t : dead_stacks) {
 					counters.remove(t);
 				}
 				change_count = 0;

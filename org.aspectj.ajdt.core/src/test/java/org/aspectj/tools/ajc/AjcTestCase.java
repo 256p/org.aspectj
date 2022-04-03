@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.stream.Collectors;
 
 import org.aspectj.bridge.IMessage;
 import org.aspectj.bridge.ISourceLocation;
@@ -36,6 +37,9 @@ import org.aspectj.testing.util.TestUtil;
 import org.aspectj.util.LangUtil;
 
 import junit.framework.TestCase;
+
+import static java.io.File.pathSeparator;
+import static java.io.File.separator;
 
 /**
  * A TestCase class that acts as the superclass for all test cases wishing to drive the ajc compiler.
@@ -65,22 +69,42 @@ public abstract class AjcTestCase extends TestCase {
 
 	public static final String CLASSPATH_ASM =
 		Arrays.stream(System.getProperty("java.class.path")
-			.split(File.pathSeparator))
+			.split(pathSeparator))
 			.filter(path -> path.replace('\\', '/').contains("org/ow2/asm/"))
 			.findFirst()
 			.orElseThrow(() -> new RuntimeException("ASM library not found on classpath"));
+	public static final String CLASSPATH_JDT_CORE =
+		Arrays.stream(System.getProperty("java.class.path")
+			.split(pathSeparator))
+			.filter(path -> path.replace('\\', '/').contains("/org/aspectj/org.eclipse.jdt.core/"))
+			.findFirst()
+			.orElseThrow(() -> new RuntimeException("AspectJ JDT Core library not found on classpath"));
+	public static final String CLASSPATH_JUNIT =
+		Arrays.stream(System.getProperty("java.class.path")
+			.split(pathSeparator))
+			.filter(path -> path.replace('\\', '/').contains("/junit/junit/"))
+			.findFirst()
+			.orElseThrow(() -> new RuntimeException("JUnit library not found on classpath"));
 
-	// see Ajc and AntSpec
-	public static final String DEFAULT_CLASSPATH_ENTRIES =
-			Ajc.outputFolders("bridge","util","loadtime","weaver","asm","testing-client","runtime","org.aspectj.matcher")
-				+ File.pathSeparator + ".." + File.separator + "lib" + File.separator + "junit" + File.separator + "junit.jar"
-				+ File.pathSeparator + ".." + File.separator + "lib" + File.separator + "bcel" + File.separator + "bcel.jar"
-				+ File.pathSeparator + ".." + File.separator + "lib" + File.separator + "bcel" + File.separator + "bcel-verifier.jar"
-				+ File.pathSeparator + CLASSPATH_ASM
-				+ File.pathSeparator + ".." + File.separator + "lib" + File.separator + "test" + File.separator + "testing-client.jar"
-				// hmmm, this next one should perhaps point to an aj-build jar...
-				+ File.pathSeparator + ".." + File.separator + "lib" + File.separator + "test" + File.separator + "aspectjrt.jar"
+	// In 'useFullLTW' mode, aspectjweaver.jar is a Java agent. Therefore, what is contained in there
+	// does not need to be on the classpath.
+	public static final String DEFAULT_FULL_LTW_CLASSPATH_ENTRIES =
+		Ajc.outputFolders("testing-client")
+			+ pathSeparator + CLASSPATH_JUNIT
+			+ pathSeparator + ".." + separator + "lib" + separator + "test" + separator + "testing-client.jar"
 			;
+
+	// See Ajc and AntSpec
+	public static final String DEFAULT_CLASSPATH_ENTRIES =
+		DEFAULT_FULL_LTW_CLASSPATH_ENTRIES
+			+ Ajc.outputFolders("bridge", "util", "loadtime", "weaver", "asm", "runtime", "org.aspectj.matcher", "bcel-builder")
+			+ pathSeparator + ".." + separator + "lib" + separator + "bcel" + separator + "bcel.jar"
+			+ pathSeparator + ".." + separator + "lib" + separator + "bcel" + separator + "bcel-verifier.jar"
+			+ pathSeparator + CLASSPATH_JDT_CORE
+			+ pathSeparator + CLASSPATH_ASM
+			// hmmm, this next one should perhaps point to an aj-build jar...
+			+ pathSeparator + ".." + separator + "lib" + separator + "test" + separator + "aspectjrt.jar"
+		;
 
 	/*
 	 * Save reference to real stderr and stdout before starting redirection
@@ -144,12 +168,12 @@ public abstract class AjcTestCase extends TestCase {
 		 */
 		public Message(int line, String srcFile, String text, ISourceLocation[] seeAlso) {
 			this.line = line;
-			StringBuffer srcFileName = new StringBuffer();
+			StringBuilder srcFileName = new StringBuilder();
 			if (srcFile != null) {
 				char[] chars = srcFile.toCharArray();
 				for (char c : chars) {
 					if ((c == '\\') || (c == '/')) {
-						srcFileName.append(File.separator);
+						srcFileName.append(separator);
 					} else {
 						srcFileName.append(c);
 					}
@@ -230,31 +254,18 @@ public abstract class AjcTestCase extends TestCase {
 		 */
 		@Override
 		public String toString() {
-			StringBuffer buff = new StringBuffer();
+			StringBuilder buff = new StringBuilder();
 			buff.append("message ");
-			if (sourceFileName != null) {
-				buff.append("in file ");
-				buff.append(sourceFileName);
-				buff.append(" ");
-			}
-			if (line != -1) {
-				buff.append("on line ");
-				buff.append(line);
-				buff.append(" ");
-			}
-			if (text != null) {
-				buff.append("containing text '");
-				buff.append(text);
-				buff.append("' ");
-			}
+			if (sourceFileName != null)
+				buff.append("in file ").append(sourceFileName).append(" ");
+			if (line != -1)
+				buff.append("on line ").append(line).append(" ");
+			if (text != null)
+				buff.append("containing text '").append(text).append("' ");
 			if (seeAlsos != null) {
 				buff.append("\n\twith see alsos:");
-				for (ISourceLocation seeAlso : seeAlsos) {
-					buff.append("\t\t");
-					buff.append(seeAlso.getSourceFile().getPath());
-					buff.append(":");
-					buff.append(seeAlso.getLine());
-				}
+				for (ISourceLocation seeAlso : seeAlsos)
+					buff.append("\t\t").append(seeAlso.getSourceFile().getPath()).append(":").append(seeAlso.getLine());
 			}
 			return buff.toString();
 		}
@@ -443,7 +454,7 @@ public abstract class AjcTestCase extends TestCase {
 		boolean infosEmpty = expected.isIgnoringInfoMessages() || missingInfos.isEmpty() && extraInfos.isEmpty();
 		if (!(missingFails.isEmpty() && missingWarnings.isEmpty() && missingErrors.isEmpty() && missingWeaves.isEmpty()
 				&& extraFails.isEmpty() && extraWarnings.isEmpty() && extraErrors.isEmpty() && extraWeaves.isEmpty() && infosEmpty)) {
-			StringBuffer failureReport = new StringBuffer(assertionFailedMessage);
+			StringBuilder failureReport = new StringBuilder(assertionFailedMessage);
 			failureReport.append("\n");
 			if (!expected.isIgnoringInfoMessages()) {
 				addMissing(failureReport, "info", missingInfos);
@@ -459,12 +470,10 @@ public abstract class AjcTestCase extends TestCase {
 			addExtra(failureReport, "error", extraErrors);
 			addExtra(failureReport, "fail", extraFails);
 			addExtra(failureReport, "weaveInfo", extraWeaves);
-			failureReport.append("\ncommand was: 'ajc");
+			failureReport.append("\nCommand: 'ajc");
 			String[] args = result.getArgs();
-			for (String arg : args) {
-				failureReport.append(" ");
-				failureReport.append(arg);
-			}
+			for (String arg : args)
+				failureReport.append(" ").append(arg);
 			String report = failureReport.toString();
 			System.err.println(failureReport);
 			fail(assertionFailedMessage + "'\n" + report);
@@ -570,28 +579,25 @@ public abstract class AjcTestCase extends TestCase {
 	 */
 	public RunResult run(String className, String moduleName, String[] args, String vmargs, final String classpath, String modulepath, boolean useLTW, boolean useFullLTW) {
 
-		if (args != null) {
-			for (int i = 0; i < args.length; i++) {
-				args[i] = substituteSandbox(args[i]);
-			}
-		}
+		if (args == null)
+			args = new String[0];
+		for (int i = 0; i < args.length; i++)
+			args[i] = substituteSandbox(args[i]);
+
 		lastRunResult = null;
-		StringBuffer cp = new StringBuffer();
+		StringBuilder cp = new StringBuilder();
 		if (classpath != null) {
 			// allow replacing this special variable, rather than copying all files to allow tests of jars that don't end in .jar
-			cp.append(substituteSandbox(classpath));
-			cp.append(File.pathSeparator);
+			cp.append(substituteSandbox(classpath)).append(pathSeparator);
 		}
 		if (moduleName == null) {
 			// When running modules, we want more control so don't try to be helpful by adding all jars
 			cp.append(ajc.getSandboxDirectory().getAbsolutePath());
 			getAnyJars(ajc.getSandboxDirectory(), cp);
 		}
-		StringBuffer mp = new StringBuffer();
-		if (modulepath != null) {
-			mp.append(substituteSandbox(modulepath));
-			mp.append(File.pathSeparator);
-		}
+		StringBuilder mp = new StringBuilder();
+		if (modulepath != null)
+			mp.append(substituteSandbox(modulepath)).append(pathSeparator);
 
 		URLClassLoader sandboxLoader;
 		ClassLoader parentLoader = getClass().getClassLoader().getParent();
@@ -613,17 +619,26 @@ public abstract class AjcTestCase extends TestCase {
 			URL[] sandboxUrls = getURLs(cp.toString());
 			sandboxLoader = createWeavingClassLoader(sandboxUrls, aspectjLoader);
 			// sandboxLoader = createWeavingClassLoader(sandboxUrls,testLoader);
-		} else if(useFullLTW  && useLTW) {
+		}
+		else if(useFullLTW  && useLTW) {
 			if(vmargs == null){
 				vmargs ="";
 			}
 
 			File directory = new File (".");
 			String absPath = directory.getAbsolutePath();
-			String javaagent= absPath+File.separator+".."+File.separator+"aj-build"+File.separator+"dist"+File.separator+"tools"+File.separator+"lib"+File.separator+"aspectjweaver.jar";
+			String javaagent = absPath + separator + ".." + separator + "lib" + separator + "aspectj" + separator + "lib" + separator + "aspectjweaver.jar";
+			String defaultCpAbsolute = Arrays.stream(DEFAULT_FULL_LTW_CLASSPATH_ENTRIES.split(pathSeparator))
+				.map(path -> new File(path).getAbsolutePath())
+				.collect(Collectors.joining(pathSeparator));
 			try {
-				String command ="java " +vmargs+ " -classpath " + cp +" -javaagent:"+javaagent + " " + className ;
-
+				String command =
+					"java " + vmargs +
+					" -classpath " + cp + pathSeparator + defaultCpAbsolute +
+					" -javaagent:" + javaagent + " " +
+					className + " " + String.join(" ", args);
+				if (Ajc.verbose)
+					System.out.println("\nCommand: '" + command + "'\n");
 				// Command is executed using ProcessBuilder to allow setting CWD for ajc sandbox compliance
 				ProcessBuilder pb = new ProcessBuilder(tokenizeCommand(command));
 				pb.directory( new File(ajc.getSandboxDirectory().getAbsolutePath()));
@@ -637,7 +652,8 @@ public abstract class AjcTestCase extends TestCase {
 				e.printStackTrace();
 			}
 			return lastRunResult;
-		} else if (moduleName != null) {
+		}
+		else if (moduleName != null) {
 			// CODE FOR RUNNING MODULES
 			if(vmargs == null){
 				vmargs ="";
@@ -649,13 +665,11 @@ public abstract class AjcTestCase extends TestCase {
 				if (mp.indexOf("$runtime") != -1) {
 					mp = mp.replace(mp.indexOf("$runtime"),"$runtime".length(),TestUtil.aspectjrtPath().toString());
 				}
-				if (cp.indexOf("aspectjrt")==-1) {
-					cp.append(TestUtil.aspectjrtPath().getPath()).append(File.pathSeparator);
-				}
-				String command = LangUtil.getJavaExecutable().getAbsolutePath() + " " +vmargs+ (cp.length()==0?"":" -classpath " + cp) + " -p "+mp+" --module "+moduleName   ;
-				if (Ajc.verbose) {
-					System.out.println("Command is "+command);
-				}
+				if (cp.indexOf("aspectjrt") == -1)
+					cp.append(TestUtil.aspectjrtPath().getPath()).append(pathSeparator);
+				String command = LangUtil.getJavaExecutable().getAbsolutePath() + " " + vmargs + (cp.length() == 0 ? "" : " -classpath " + cp) + " -p " + mp + " --module " + moduleName;
+				if (Ajc.verbose)
+					System.out.println("\nCommand: '" + command + "'\n");
 				// Command is executed using ProcessBuilder to allow setting CWD for ajc sandbox compliance
 				ProcessBuilder pb = new ProcessBuilder(tokenizeCommand(command));
 				pb.directory( new File(ajc.getSandboxDirectory().getAbsolutePath()));
@@ -669,19 +683,27 @@ public abstract class AjcTestCase extends TestCase {
 				e.printStackTrace();
 			}
 			return lastRunResult;
-		} else if (vmargs!=null && (vmargs.contains("--enable-preview") || vmargs.contains("--add-modules") || vmargs.contains("--limit-modules") || vmargs.contains("--add-reads"))) {
+		}
+		else if (
+			vmargs != null && (
+				vmargs.contains("--enable-preview") ||
+				vmargs.contains("--add-modules") ||
+				vmargs.contains("--limit-modules") ||
+				vmargs.contains("--add-reads") ||
+				vmargs.contains("--add-exports")
+			)
+		) {
 			// If --add-modules supplied, need to fork the test
 			try {
 				//				if (mp.indexOf("$runtime") != -1) {
 				//					mp = mp.replace(mp.indexOf("$runtime"),"$runtime".length(),TestUtil.aspectjrtPath().toString());
 				//				}
 				if (cp.indexOf("aspectjrt")==-1) {
-					cp.append(File.pathSeparator).append(TestUtil.aspectjrtPath().getPath());
+					cp.append(pathSeparator).append(TestUtil.aspectjrtPath().getPath());
 				}
 				String command = LangUtil.getJavaExecutable().getAbsolutePath() + " " +vmargs+ (cp.length()==0?"":" -classpath " + cp) + " " + className   ;
-				if (Ajc.verbose) {
-					System.out.println("\nCommand is "+command);
-				}
+				if (Ajc.verbose)
+					System.out.println("\nCommand: '" + command + "'\n");
 				// Command is executed using ProcessBuilder to allow setting CWD for ajc sandbox compliance
 				ProcessBuilder pb = new ProcessBuilder(tokenizeCommand(command));
 				pb.directory( new File(ajc.getSandboxDirectory().getAbsolutePath()));
@@ -695,7 +717,8 @@ public abstract class AjcTestCase extends TestCase {
 				e.printStackTrace();
 			}
 			return lastRunResult;
-		} else {
+		}
+		else {
 			cp.append(DEFAULT_CLASSPATH_ENTRIES);
 			URL[] urls = getURLs(cp.toString());
 			sandboxLoader = new URLClassLoader(urls, parentLoader);
@@ -703,16 +726,13 @@ public abstract class AjcTestCase extends TestCase {
 		ByteArrayOutputStream baosOut = new ByteArrayOutputStream();
 		ByteArrayOutputStream baosErr = new ByteArrayOutputStream();
 
+		StringBuilder command = new StringBuilder();
+		command.append("java -classpath ").append(cp).append(" ").append(className);
+		for (String arg : args)
+			command.append(" ").append(arg);
+		if (Ajc.verbose)
+			System.out.println("\nCommand: '" + command + "'\n");
 
-		StringBuffer command = new StringBuffer();
-		command.append("java -classpath ");
-		command.append(cp.toString());
-		command.append(" ");
-		command.append(className);
-		for (String arg : args) {
-			command.append(" ");
-			command.append(arg);
-		}
 		//		try {
 		//			// Enable the security manager
 		//			Policy.setPolicy(new MyPolicy());
@@ -867,7 +887,7 @@ public abstract class AjcTestCase extends TestCase {
 	}
 
 	private URL[] getURLs(String classpath) {
-		StringTokenizer strTok = new StringTokenizer(classpath, File.pathSeparator);
+		StringTokenizer strTok = new StringTokenizer(classpath, pathSeparator);
 		URL[] urls = new URL[strTok.countTokens()];
 		try {
 			for (int i = 0; i < urls.length; i++) {
@@ -926,7 +946,7 @@ public abstract class AjcTestCase extends TestCase {
 				cpIndex++;
 				String[] newargs = new String[args.length];
 				System.arraycopy(args, 0, newargs, 0, args.length);
-				newargs[cpIndex] = args[cpIndex] + File.pathSeparator + TestUtil.aspectjrtPath().getPath();
+				newargs[cpIndex] = args[cpIndex] + pathSeparator + TestUtil.aspectjrtPath().getPath();
 				args = newargs;
 			}
 		}
@@ -934,7 +954,7 @@ public abstract class AjcTestCase extends TestCase {
 		if (needsJRTFS) {
 			if (!args[cpIndex].contains(LangUtil.JRT_FS)) {
 				String jrtfsPath = LangUtil.getJrtFsFilePath();
-				args[cpIndex] = jrtfsPath + File.pathSeparator + args[cpIndex];
+				args[cpIndex] = jrtfsPath + pathSeparator + args[cpIndex];
 			}
 		}
 		return args;
@@ -983,42 +1003,30 @@ public abstract class AjcTestCase extends TestCase {
 		}
 	}
 
-	private void addMissing(StringBuffer buff, String type, List<AjcTestCase.Message> messages) {
+	private void addMissing(StringBuilder buff, String type, List<AjcTestCase.Message> messages) {
 		if (!messages.isEmpty()) {
-			buff.append("Missing expected ");
-			buff.append(type);
-			buff.append(" messages:\n");
-			for (Message message : messages) {
-				buff.append("\t");
-				buff.append(message.toString());
-				buff.append("\n");
-			}
+			buff.append("Missing expected ").append(type).append(" messages:\n");
+			for (Message message : messages)
+				buff.append("\t").append(message.toString()).append("\n");
 		}
 	}
 
-	private void addExtra(StringBuffer buff, String type, List messages) {
+	private void addExtra(StringBuilder buff, String type, List messages) {
 		if (!messages.isEmpty()) {
-			buff.append("Unexpected ");
-			buff.append(type);
-			buff.append(" messages:\n");
-			for (Object message : messages) {
-				buff.append("\t");
-				buff.append(message.toString());
-				buff.append("\n");
-			}
+			buff.append("Unexpected ").append(type).append(" messages:\n");
+			for (Object message : messages)
+				buff.append("\t").append(message.toString()).append("\n");
 		}
 	}
 
 	// add any jars in the directory to the classpath
-	private void getAnyJars(File dir, StringBuffer buff) {
+	private void getAnyJars(File dir, StringBuilder buff) {
 		File[] files = dir.listFiles();
 		for (File file : files) {
-			if (file.getName().endsWith(".jar")) {
-				buff.append(File.pathSeparator);
-				buff.append(file.getAbsolutePath());
-			} else if (file.isDirectory()) {
+			if (file.getName().endsWith(".jar"))
+				buff.append(pathSeparator).append(file.getAbsolutePath());
+			else if (file.isDirectory())
 				getAnyJars(file, buff);
-			}
 		}
 	}
 
@@ -1041,7 +1049,7 @@ public abstract class AjcTestCase extends TestCase {
 	private static boolean getBoolean(String name, boolean def) {
 		String defaultValue = String.valueOf(def);
 		String value = System.getProperty(name, defaultValue);
-		return Boolean.valueOf(value);
+		return Boolean.parseBoolean(value);
 	}
 
 	/*

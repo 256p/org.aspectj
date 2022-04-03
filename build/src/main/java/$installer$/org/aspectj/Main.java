@@ -799,7 +799,7 @@ abstract class WizardPane {
 	public static String stringFromStream(InputStream stream) throws IOException {
 		BufferedReader reader = new BufferedReader(new InputStreamReader(stream, "US-ASCII"));
 
-		StringBuffer ret = new StringBuffer();
+		StringBuilder ret = new StringBuilder();
 		int data;
 		while ((data = reader.read()) != -1) {
 			ret.append((char) data);
@@ -827,7 +827,7 @@ abstract class WizardPane {
 	public static String applyProperties(String text, Map<String,String> map) {
 		// ${name} -> map.get(name).toString()
 		int lastIndex = 0;
-		StringBuffer buf = new StringBuffer();
+		StringBuilder buf = new StringBuilder();
 
 		int startIndex;
 		while ((startIndex = text.indexOf("${", lastIndex)) != -1) {
@@ -1331,8 +1331,6 @@ class InstallPane extends WizardPane {
 					LaunchScriptMaker lsm = new LaunchScriptMaker(context);
 					lsm.writeScript("ajc");
 					lsm.writeScript("ajdoc");
-					//lsm.writeScript("ajdb");
-					lsm.writeScript("ajbrowser");
 
 					// Moved to the bin dir in 1.2.1
 					// we should now come back and make the generation of this

@@ -44,7 +44,7 @@ public class ModulesTest extends TestCase {
 
     static {
         String[] names = {
-        "ajbrowser", "ajde", "ajdoc", "asm",
+        "ajde", "ajdoc", "asm",
         "bridge", "loadtime", "org.aspectj.ajdt.core",
         "runtime", "taskdefs", "testing-client", "testing-util",
         "tests", "util", "weaver"};
@@ -115,7 +115,7 @@ public class ModulesTest extends TestCase {
             }
         }
         if (!badModules.isEmpty()) {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             for (Module module: badModules) {
                 System.err.println(module.toLongString());
                 sb.append("\n");

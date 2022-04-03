@@ -48,7 +48,7 @@ public class IncrementalCase { // XXX NOT bound to junit - bridge tests?
     	IncrementalCase me = new IncrementalCase();
 		MessageHandler h = new MessageHandler();
 //		boolean result;
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		for (String arg : args) {
 			sb.append("\n###### results for " + arg);
 			sb.append("\n" + me.run(new File(arg), h) + ": " + h);
@@ -104,7 +104,7 @@ public class IncrementalCase { // XXX NOT bound to junit - bridge tests?
 			throw new Error("did not get definitions");
 		}
 		MessageHandler compilerMessages = new MessageHandler();
-        StringBuffer commandLine = new StringBuffer();
+        StringBuilder commandLine = new StringBuilder();
 		for (int i = 1; result && (i < 10); i++) {
 			String fromSuffix = "." + i + "0.java";
 			// copy files, collecting as we go...
@@ -171,13 +171,13 @@ public class IncrementalCase { // XXX NOT bound to junit - bridge tests?
 		File sandboxClassesDir,
 		Definition def,
 		IMessageHolder compilerMessages,
-        StringBuffer commandLine,
+        StringBuilder commandLine,
 		IMessageHandler handler) {
         log("verifyCompile -  iteration ", iteration, handler);
 		log("verifyCompile -        def ", def, handler);
         log("verifyCompile -    command ", commandLine.toString(), handler);
 		log("verifyCompile -   messages ", compilerMessages, handler);
-        StringBuffer failures = new StringBuffer();
+        StringBuilder failures = new StringBuilder();
         if (def.expectFail == result) {
              failures.append("iteration " + iteration +
                 " expected to " + (def.expectFail ? "fail\n" : "pass"));
@@ -303,7 +303,7 @@ public class IncrementalCase { // XXX NOT bound to junit - bridge tests?
 		}
 		boolean result = true;
 		final int[] exp = new int[expected.length];
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("[");
 		for (int i = 0; i < exp.length; i++) {
 			String s = expected[i];
@@ -311,7 +311,7 @@ public class IncrementalCase { // XXX NOT bound to junit - bridge tests?
 			if (-1 != loc)
 				s = s.substring(loc + 1);
 			try {
-				exp[i] = Integer.valueOf(s);
+				exp[i] = Integer.parseInt(s);
 				sb.append(exp[i] + ((i < (exp.length - 1)) ? ", " : ""));
 			} catch (NumberFormatException e) {
 				info(handler, "bad " + label + ":" + expected[i]);

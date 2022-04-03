@@ -6,7 +6,7 @@
   <parent>
     <groupId>org.aspectj</groupId>
     <artifactId>aspectj-parent</artifactId>
-    <version>1.9.8-SNAPSHOT</version>
+    <version>1.9.10-SNAPSHOT</version>
   </parent>
 
   <artifactId>testing-drivers</artifactId>
@@ -55,7 +55,10 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
           <testFailureIgnore>false</testFailureIgnore>
-          <argLine>${jvm.arg.addOpens}</argLine>
+          <argLine>
+            ${jvm.arg.addOpens}
+            ${jvm.arg.allowSecurityManager}
+          </argLine>
           <excludes>
             <exclude>**/*AjcTestSpecAsTest*</exclude>
           </excludes>

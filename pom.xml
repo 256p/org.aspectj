@@ -5,7 +5,7 @@
 
 	<groupId>org.aspectj</groupId>
 	<artifactId>aspectj-parent</artifactId>
-	<version>1.9.8-SNAPSHOT</version>
+	<version>1.9.10-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<name>AspectJ Parent Project</name>
@@ -21,8 +21,8 @@
 		<maven.javadoc.skip>true</maven.javadoc.skip>
 
 		<!-- Dependency versions -->
-		<jdt.core.version>1.9.7.M2</jdt.core.version>
-		<asm.version>9.1</asm.version>
+		<jdt.core.version>1.9.9.1</jdt.core.version>
+		<asm.version>9.2</asm.version>
 		<lib.ant.version>1.6.3</lib.ant.version>
 		<lib.ant.xerces.version>2.6.2</lib.ant.xerces.version>
 		<lib.regexp.version>1.2</lib.regexp.version>
@@ -68,9 +68,9 @@
 			</releases>
 		</repository>
 		<repository>
-			<id>aspectj-dev</id>
-			<name>AspectJ artifacts on aspectj.dev</name>
-			<url>https://aspectj.dev/maven</url>
+			<id>ossrh-snapshots</id>
+			<name>Sonatype OSSRH snapshots</name>
+			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
 			<layout>default</layout>
 			<snapshots>
 				<enabled>true</enabled>
@@ -104,9 +104,9 @@
 			</releases>
 		</pluginRepository>
 		<pluginRepository>
-			<id>aspectj-dev</id>
-			<name>AspectJ artifacts on aspectj.dev</name>
-			<url>https://aspectj.dev/maven</url>
+			<id>ossrh-snapshots</id>
+			<name>Sonatype OSSRH snapshots</name>
+			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
 			<layout>default</layout>
 			<snapshots>
 				<enabled>true</enabled>
@@ -127,7 +127,6 @@
 		<module>org.aspectj.matcher</module>
 		<module>asm</module>
 		<module>testing-client</module>
-		<module>ajbrowser</module>
 		<module>runtime</module>
 		<module>bcel-builder</module>
 		<module>weaver</module>
@@ -168,6 +167,7 @@
 			</activation>
 			<properties>
 				<jvm.arg.addOpens/>
+				<jvm.arg.allowSecurityManager/>
 			</properties>
 		</profile>
 		<profile>
@@ -177,6 +177,21 @@
 			</activation>
 			<properties>
 				<jvm.arg.addOpens>--add-opens java.base/java.lang=ALL-UNNAMED</jvm.arg.addOpens>
+				<jvm.arg.allowSecurityManager/>
+			</properties>
+		</profile>
+		<profile>
+			<id>jdk-18-to-xx</id>
+			<activation>
+				<jdk>[18,)</jdk>
+			</activation>
+			<properties>
+				<!--
+					JEP 411: Deprecate the Security Manager for Removal, see https://openjdk.java.net/jeps/411.
+					As of Java 18, the new API for blocking System.exit is not available yet, see
+					https://bugs.openjdk.java.net/browse/JDK-8199704.
+				-->
+				<jvm.arg.allowSecurityManager>-Djava.security.manager=allow</jvm.arg.allowSecurityManager>
 			</properties>
 		</profile>
 		<profile>
@@ -226,7 +241,10 @@
 					<version>2.22.2</version>
 					<configuration>
 						<!--<testFailureIgnore>true</testFailureIgnore>-->
-						<argLine>${jvm.arg.addOpens}</argLine>
+						<argLine>
+							${jvm.arg.addOpens}
+							${jvm.arg.allowSecurityManager}
+						</argLine>
 						<excludes>
 							<exclude>**/*ModuleTests.java</exclude>
 						</excludes>
@@ -272,13 +290,7 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-shade-plugin</artifactId>
-					<!--
-						TODO: Replace by release in which
-						  - https://issues.apache.org/jira/browse/MSHADE-252,
-						  - https://issues.apache.org/jira/browse/MSHADE-391,
-						  - https://issues.apache.org/jira/browse/MSHADE-366 are fixed.
-					-->
-					<version>3.2.4.MSHADE-252-391</version>
+					<version>3.3.0</version>
 					<configuration>
 						<createSourcesJar>true</createSourcesJar>
 						<createDependencyReducedPom>false</createDependencyReducedPom>
@@ -315,6 +327,10 @@
 					<artifactId>maven-assembly-plugin</artifactId>
 					<version>3.1.1</version>
 				</plugin>
+				<!--
+					TODO: MSHADE-36 is in Maven Shade 3.3.0 -> it should be possible to include the dependency-reduced POM there
+					      directly. So maybe, we can rid of Flatten Maven Plugin.
+				-->
 				<plugin>
 					<groupId>org.codehaus.mojo</groupId>
 					<artifactId>flatten-maven-plugin</artifactId>
@@ -372,6 +388,19 @@
 						<!-- Activate in order to directly release to Maven Central after successful staging -->
 						<autoReleaseAfterClose>false</autoReleaseAfterClose>
 					</configuration>
+					<dependencies>
+						<!--
+							Plugin version 1.6.8 does not work on JDK 16+ without special MAVEN_OPTS opening certain modules,
+							because the XStream version used needs it. One workaround is to use a more recent XStream version.
+							Attention: Do *not* upgrade to e.g. 1.4.18, because it causes exceptions during deployment.
+							TODO: remove plugin dependency after OSSRH-66257, NEXUS-26993 are fixed.
+						-->
+						<dependency>
+							<groupId>com.thoughtworks.xstream</groupId>
+							<artifactId>xstream</artifactId>
+							<version>1.4.15</version>
+						</dependency>
+					</dependencies>
 				</plugin>
 				<plugin>
 					<groupId>org.codehaus.mojo</groupId>

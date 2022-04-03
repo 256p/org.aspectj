@@ -658,10 +658,10 @@ public class AjASTConverter extends ASTConverter {
 		} else if (declare instanceof DeclareParents) {
 			DeclareParents dp = (DeclareParents) declare;
 			declareDeclaration = new org.aspectj.org.eclipse.jdt.core.dom.DeclareParentsDeclaration(this.ast, dp.isExtends());
-			org.aspectj.org.eclipse.jdt.core.dom.PatternNode pNode = convert(dp.getChild());
-			if (pNode instanceof org.aspectj.org.eclipse.jdt.core.dom.TypePattern) {
+			AbstractTypePattern pNode = convert(dp.getChild());
+			if (pNode instanceof AbstractTypePattern) {
 				((DeclareParentsDeclaration) declareDeclaration)
-						.setChildTypePattern((org.aspectj.org.eclipse.jdt.core.dom.TypePattern) pNode);
+						.setChildTypePattern(pNode);
 			}
 			TypePattern[] weaverTypePatterns = dp.getParents().getTypePatterns();
 			List typePatterns = ((DeclareParentsDeclaration) declareDeclaration).parentTypePatterns();
@@ -680,10 +680,10 @@ public class AjASTConverter extends ASTConverter {
 			declareDeclaration = new DeclareSoftDeclaration(this.ast);
 			DeclareSoft ds = (DeclareSoft) declare;
 			((DeclareSoftDeclaration) declareDeclaration).setPointcut(convert(ds.getPointcut()));
-			org.aspectj.org.eclipse.jdt.core.dom.PatternNode pNode = convert(ds.getException());
-			if (pNode instanceof org.aspectj.org.eclipse.jdt.core.dom.TypePattern) {
+			AbstractTypePattern pNode = convert(ds.getException());
+			if (pNode instanceof AbstractTypePattern) {
 				((DeclareSoftDeclaration) declareDeclaration)
-						.setTypePattern((org.aspectj.org.eclipse.jdt.core.dom.TypePattern) pNode);
+						.setTypePattern(pNode);
 			}
 		}
 
@@ -695,7 +695,7 @@ public class AjASTConverter extends ASTConverter {
 	}
 
 	private String updateString(String message) {
-		StringBuffer sb = new StringBuffer(message);
+		StringBuilder sb = new StringBuilder(message);
 		int nextQuote = sb.toString().indexOf("\"");
 		while (nextQuote != -1) {
 			sb.insert(nextQuote, "\\");
@@ -866,12 +866,12 @@ public class AjASTConverter extends ASTConverter {
 
 	}
 
-	public org.aspectj.org.eclipse.jdt.core.dom.TypePattern convert(
+	public AbstractTypePattern convert(
 			TypePattern weaverNode) {
 
 		// First check if the node is a Java type (WildType, ExactType,
 		// BindingType)
-		org.aspectj.org.eclipse.jdt.core.dom.TypePattern domNode = createIdentifierTypePattern(weaverNode);
+		AbstractTypePattern domNode = createIdentifierTypePattern(weaverNode);
 
 		if (domNode == null) {
 			if (weaverNode instanceof org.aspectj.weaver.patterns.EllipsisTypePattern) {
@@ -907,7 +907,7 @@ public class AjASTConverter extends ASTConverter {
 				// nottypepattern is 1, NOT 0.
 				TypePattern negatedTypePattern = ((org.aspectj.weaver.patterns.NotTypePattern) weaverNode)
 						.getNegatedPattern();
-				org.aspectj.org.eclipse.jdt.core.dom.TypePattern negatedDomTypePattern = convert(negatedTypePattern);
+				AbstractTypePattern negatedDomTypePattern = convert(negatedTypePattern);
 				domNode = new org.aspectj.org.eclipse.jdt.core.dom.NotTypePattern(
 						ast, negatedDomTypePattern);
 			} else if (weaverNode instanceof org.aspectj.weaver.patterns.TypeCategoryTypePattern) {
@@ -945,11 +945,11 @@ public class AjASTConverter extends ASTConverter {
 	 *            to convert to a DOM equivalent
 	 * @return DOM node or null if it was not created
 	 */
-	protected org.aspectj.org.eclipse.jdt.core.dom.TypePattern createIdentifierTypePattern(
+	protected AbstractTypePattern createIdentifierTypePattern(
 			TypePattern weaverTypePattern) {
 		String typeExpression = weaverTypePattern.toString();
 
-		org.aspectj.org.eclipse.jdt.core.dom.TypePattern domTypePattern = null;
+		AbstractTypePattern domTypePattern = null;
 		if (weaverTypePattern instanceof org.aspectj.weaver.patterns.WildTypePattern) {
 			// Use the expression for wild type patterns as a Name may not be
 			// constructed

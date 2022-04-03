@@ -10,11 +10,13 @@ import junit.framework.TestCase;
 
 /*
  * Tests create a simple classloader repository configuration and check sharing of information.
+ * 
+ * @author Andy Clement
  */
 public class ClassloaderRepositoryTest extends TestCase {
 
 	private ClassLoaderRepository rep1,rep2;
-	
+
 	public void setUp() throws Exception {
 		super.setUp();
 		ClassLoader cl = Thread.currentThread().getContextClassLoader();
@@ -25,7 +27,7 @@ public class ClassloaderRepositoryTest extends TestCase {
 	}
 
 	// Retrieve string 5 times from same repository, 4 hits should be from local cache
-	public void testLocalCacheWorks() throws ClassNotFoundException {		
+	public void testLocalCacheWorks() throws ClassNotFoundException {
 		ClassLoaderRepository.useSharedCache=false;
 		JavaClass jc = rep1.loadClass("java.lang.String");
 		jc = rep1.loadClass("java.lang.String");
@@ -36,7 +38,7 @@ public class ClassloaderRepositoryTest extends TestCase {
 	}
 
 	// Retrieve string 5 times from same repository, 4 hits should be from local cache
-	public void testSharedCacheWorksOnOne() throws ClassNotFoundException {		
+	public void testSharedCacheWorksOnOne() throws ClassNotFoundException {
 		ClassLoaderRepository.useSharedCache=true;
 		JavaClass jc = rep1.loadClass("java.lang.String");
 		jc = rep1.loadClass("java.lang.String");
@@ -47,16 +49,16 @@ public class ClassloaderRepositoryTest extends TestCase {
 	}
 
 	// Retrieve String through one repository then load again through another, should be shared cache hit
-	public void testSharedCacheWorks() throws ClassNotFoundException {		
+	public void testSharedCacheWorks() throws ClassNotFoundException {
 		ClassLoaderRepository.useSharedCache=true;
 		JavaClass jc = rep1.loadClass("java.lang.String");
 		jc = rep2.loadClass("java.lang.String");
 		assertTrue("Should have retrieved String from shared cache: "+reportSharedCacheHits(rep1),
 				reportSharedCacheHits(rep1)==1);
 	}
-	
+
 	// Shared cache OFF, shouldn't get a shared cache hit
-	public void testSharedCacheCanBeDeactivated() throws ClassNotFoundException {		
+	public void testSharedCacheCanBeDeactivated() throws ClassNotFoundException {
 		try {
 			ClassLoaderRepository.useSharedCache=false;
 			JavaClass jc = rep1.loadClass("java.lang.String");
@@ -68,7 +70,89 @@ public class ClassloaderRepositoryTest extends TestCase {
 			ClassLoaderRepository.useSharedCache=true;
 		}
 	}
-	
+
+	// ClassLoaderRepository.ignoreCacheClearRequests
+	public void testIgnoreCacheClearRequests() throws Exception {
+		ClassLoaderRepository.useSharedCache = false;
+		try {
+			// the 'normal' flow with ignore in default of false
+			ClassLoaderRepository.ignoreCacheClearRequests = false;
+			try {
+				ClassLoaderRepository repository = setupRepository();
+				repository.loadClass("java.lang.String");
+				long localCacheHits = repository.reportStats()[5];
+				assertEquals(0, localCacheHits);
+				repository.clear();
+				repository.loadClass("java.lang.String");
+				localCacheHits = repository.reportStats()[5];
+				assertEquals(0, localCacheHits); // cache was cleared, so no hit
+			} finally {
+				ClassLoaderRepository.ignoreCacheClearRequests = false;
+			}
+			// with ignore cache clear turned on
+			ClassLoaderRepository.ignoreCacheClearRequests = true;
+			try {
+				ClassLoaderRepository repository = setupRepository();
+				repository.loadClass("java.lang.String");
+				long localCacheHits = repository.reportStats()[5];
+				assertEquals(0, localCacheHits);
+				repository.clear();
+				repository.loadClass("java.lang.String");
+				localCacheHits = repository.reportStats()[5];
+				assertEquals(1, localCacheHits);
+			} finally {
+				ClassLoaderRepository.ignoreCacheClearRequests = false;
+			}
+		} finally {
+			ClassLoaderRepository.useSharedCache = true;
+		}
+	}
+
+	// ClassLoaderRepository.useUnavailableClassesCache
+	public void testUnavailableClassesCache() throws Exception {
+		ClassLoaderRepository.useUnavailableClassesCache = false;
+		try {
+			ClassLoaderRepository repository = setupRepository();
+			attemptLoadThatWillFail(repository);
+			for (int i = 0; i < 1000; i++) {
+				attemptLoadThatWillFail(repository);
+			}
+			assertEquals(0, repository.reportStats()[8]);
+		} finally {
+			ClassLoaderRepository.useUnavailableClassesCache = false; // back to default
+		}
+		
+		ClassLoaderRepository.useUnavailableClassesCache = true;
+		try {
+			ClassLoaderRepository repository = setupRepository();
+			assertNotNull(repository.loadClass("java.lang.String"));
+			attemptLoadThatWillFail(repository);
+			for (int i = 0; i < 1000; i++) {
+				attemptLoadThatWillFail(repository);
+			}
+			assertEquals(1000,repository.reportStats()[8]);
+		} finally {
+			ClassLoaderRepository.useUnavailableClassesCache = false;
+		}
+		// If checking the report stats for time spent manipulating URLs it will be massively reduced
+	}
+
+	private ClassLoaderRepository setupRepository() throws Exception {
+		ClassLoader cl = Thread.currentThread().getContextClassLoader();
+		ClassLoader res = new URLClassLoader(new URL[] {}, cl);
+		ClassLoaderRepository rep = new ClassLoaderRepository(res);
+		return rep;
+	}
+
+	private void attemptLoadThatWillFail(ClassLoaderRepository repository) {
+		try {
+			repository.loadClass("this.is.made.up");
+			throw new IllegalStateException("Should not have found 'this.is.made.up'");
+		} catch (ClassNotFoundException cnfe) {
+			// ... expected ...
+		}
+	}
+
 	public void tearDown() throws Exception {
 		super.tearDown();
 		System.err.println("Rep1: "+rep1.reportStats());

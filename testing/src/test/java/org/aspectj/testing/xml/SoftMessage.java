@@ -300,7 +300,7 @@ public class SoftMessage implements IMessage {
 		if (null != sourceLocation) {
 			throw new IllegalStateException("cannot set line after creating source location");
 		}
-		this.line = Integer.valueOf(line);
+		this.line = Integer.parseInt(line);
 		SourceLocation.validLine(this.line);
 	}
 
@@ -309,7 +309,7 @@ public class SoftMessage implements IMessage {
 	}
 
 	public String toString() {
-		StringBuffer result = new StringBuffer();
+		StringBuilder result = new StringBuilder();
 
 		result.append(null == getKind() ? "<null kind>" : getKind().toString());
 

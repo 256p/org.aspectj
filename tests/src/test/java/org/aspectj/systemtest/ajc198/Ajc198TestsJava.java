@@ -17,39 +17,20 @@ import org.aspectj.testing.XMLBasedAjcTestCaseForJava17OrLater;
  */
 public class Ajc198TestsJava extends XMLBasedAjcTestCaseForJava17OrLater {
 
-  public void testHiddenClass() {
-    runTest("hidden class");
-    checkVersion("HiddenClassDemo", Constants.MAJOR_17, Constants.MINOR_17);
+  public void testSealedClassWithLegalSubclasses() {
+    runTest("sealed class with legal subclasses");
+    checkVersion("Employee", Constants.MAJOR_17, Constants.MINOR_17);
+    checkVersion("Manager", Constants.MAJOR_17, Constants.MINOR_17);
   }
 
-  public void testTextBlock1() {
-    runTest("textblock 1");
-    checkVersion("Code", Constants.MAJOR_17, Constants.MINOR_17);
-  }
-
-  public void testTextBlock2() {
-    runTest("textblock 2");
-    checkVersion("Code2", Constants.MAJOR_17, Constants.MINOR_17);
-  }
-
-  public void testRecords() {
-    runTest("simple record");
+  public void testSealedClassWithIllegalSubclass() {
+    runTest("sealed class with illegal subclass");
     checkVersion("Person", Constants.MAJOR_17, Constants.MINOR_17);
   }
 
-  public void testRecords2() {
-    runTest("using a record");
-    checkVersion("UsingPersonRecord", Constants.MAJOR_17, Constants.MINOR_17);
-  }
-
-  public void testAdvisingRecords() {
-    runTest("advising records");
-    checkVersion("TraceRecordComponents", Constants.MAJOR_17, Constants.MINOR_17);
-  }
-
-  public void testInstanceofPatterns() {
-    runTest("instanceof patterns");
-    checkVersion("Jep305", Constants.MAJOR_17, Constants.MINOR_17);
+  public void testWeaveSealedClass() {
+    runTest("weave sealed class");
+    checkVersion("PersonAspect", Constants.MAJOR_17, Constants.MINOR_17);
   }
 
   public static Test suite() {
