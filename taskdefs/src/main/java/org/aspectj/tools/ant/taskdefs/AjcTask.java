@@ -1166,7 +1166,7 @@ public class AjcTask extends MatchingTask {
 	// package-private for testing
 	String[] makeCommand() {
 		if (0 < ignored.size()) {
-            for (Object o : ignored) {
+            for (String o : ignored) {
                 logVerbose("ignored: " + o);
             }
 		}
@@ -1190,7 +1190,7 @@ public class AjcTask extends MatchingTask {
 		ArrayList<String> result = new ArrayList(cmd.extractArguments());
 		addListArgs(result);
 
-		String[] command = (String[]) result.toArray(new String[0]);
+		String[] command = result.toArray(new String[0]);
 		if (null != commandEditor) {
 			command = commandEditor.editCommand(command);
 		} else if (null != COMMAND_EDITOR) {

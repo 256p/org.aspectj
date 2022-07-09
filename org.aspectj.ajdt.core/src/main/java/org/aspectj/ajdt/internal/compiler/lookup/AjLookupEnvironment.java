@@ -68,6 +68,7 @@ import org.aspectj.weaver.bcel.BcelAnnotation;
 import org.aspectj.weaver.bcel.BcelObjectType;
 import org.aspectj.weaver.bcel.FakeAnnotation;
 import org.aspectj.weaver.bcel.LazyClassGen;
+import org.aspectj.weaver.patterns.Declare;
 import org.aspectj.weaver.patterns.DeclareAnnotation;
 import org.aspectj.weaver.patterns.DeclareParents;
 
@@ -115,7 +116,7 @@ public class AjLookupEnvironment extends LookupEnvironment implements AnonymousC
 	 * interfaces targetted by ITDs that have to be implemented by accessing the topMostImplementor of the interface, yet the aspect
 	 * where the ITD originated is not in the world
 	 */
-	private final Map dangerousInterfaces = new HashMap();
+	private final Map<ResolvedType, String> dangerousInterfaces = new HashMap<>();
 
 	public AjLookupEnvironment(ITypeRequestor typeRequestor, CompilerOptions options, ProblemReporter problemReporter,
 			INameEnvironment nameEnvironment) {
@@ -699,9 +700,8 @@ public class AjLookupEnvironment extends LookupEnvironment implements AnonymousC
 			// Check if the type we are looking at is the topMostImplementor of a
 			// dangerous interface -
 			// report a problem if it is.
-			for (Object o : dangerousInterfaces.entrySet()) {
-				Map.Entry entry = (Map.Entry) o;
-				ResolvedType interfaceType = (ResolvedType) entry.getKey();
+			for (Map.Entry<ResolvedType, String> entry : dangerousInterfaces.entrySet()) {
+				ResolvedType interfaceType = entry.getKey();
 				if (onType.isTopmostImplementor(interfaceType)) {
 					factory.showMessage(IMessage.ERROR, onType + ": " + entry.getValue(), onType.getSourceLocation(), null);
 				}
@@ -758,7 +758,7 @@ public class AjLookupEnvironment extends LookupEnvironment implements AnonymousC
 				}
 			}
 
-			List<Object> forRemoval = new ArrayList<>();
+			List<Declare> forRemoval = new ArrayList<>();
 			// now lets loop over and over until we have done all we can
 			while ((anyNewAnnotations || anyNewParents) && (!decpToRepeat.isEmpty() || !decaToRepeat.isEmpty())) {
 				anyNewParents = anyNewAnnotations = false;
@@ -1413,7 +1413,7 @@ public class AjLookupEnvironment extends LookupEnvironment implements AnonymousC
 		}
 	}
 
-	private final List pendingTypesToFinish = new ArrayList();
+	private final List<BinaryTypeBinding> pendingTypesToFinish = new ArrayList<>();
 	boolean inBinaryTypeCreationAndWeaving = false;
 	boolean processingTheQueue = false;
 
@@ -1442,7 +1442,7 @@ public class AjLookupEnvironment extends LookupEnvironment implements AnonymousC
 			if (pendingTypesToFinish.size() > 0) {
 				processingTheQueue = true;
 				while (!pendingTypesToFinish.isEmpty()) {
-					BinaryTypeBinding nextVictim = (BinaryTypeBinding) pendingTypesToFinish.remove(0);
+					BinaryTypeBinding nextVictim = pendingTypesToFinish.remove(0);
 					// During this call we may recurse into this method and add
 					// more entries to the pendingTypesToFinish list.
 					weaveInterTypeDeclarations(nextVictim);
